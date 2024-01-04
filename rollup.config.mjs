@@ -4,20 +4,20 @@ import terser from '@rollup/plugin-terser';
 
 export default [
     {
-        input: 'src/PageFlip.ts',
-        output: [{ file: 'dist/js/page-flip.browser.js', format: 'umd', name: 'St' }],
+        input: 'src/flipflow.ts',
+        output: [{ file: 'dist/js/flipflow.browser.js', format: 'umd', name: 'St' }],
         plugins: [
             postcss(),
-            typescript({ tsconfig: 'tsconfig.json', useTsconfigDeclarationDir: true }),
+            typescript({ tsconfig: 'tsconfig.json' }),
             terser(),
         ],
     },
     {
-        input: 'src/PageFlip.ts',
-        output: [{ file: 'dist/js/page-flip.module.js', format: 'es' }],
+        input: 'src/flipflow.ts',
+        output: [{ file: 'dist/js/flipflow.module.js', format: 'es' }],
         plugins: [
             postcss(),
-            typescript({ tsconfig: 'tsconfig.json', useTsconfigDeclarationDir: true }),
+            typescript({ tsconfig: 'tsconfig.json' }),
             terser(),
         ],
     },

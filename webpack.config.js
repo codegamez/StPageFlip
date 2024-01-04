@@ -1,28 +1,31 @@
 const path = require('path');
 
 module.exports = {
-    entry: './src/PageFlip.ts',
+    entry: './src/flipflow.ts',
     output: {
         path: path.resolve(__dirname, 'dist/js'),
-        filename: 'pageFlip.browser.js',
-        library: 'St'
+        filename: 'flipflow.browser.js',
+        library: 'St',
     },
     mode: 'development',
     module: {
         rules: [
             {
                 test: /\.css/,
-                use: [{
-                        loader: "style-loader"
-                    }, {
-                        loader: "css-loader"
-                    }]
+                use: [
+                    {
+                        loader: 'style-loader',
+                    },
+                    {
+                        loader: 'css-loader',
+                    },
+                ],
             },
             { test: /\.ts$/, use: 'ts-loader' },
         ],
     },
     resolve: {
-        extensions: ['.ts']
+        extensions: ['.ts'],
     },
-    watch: true
+    watch: true,
 };

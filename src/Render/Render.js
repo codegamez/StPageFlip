@@ -1,153 +1,74 @@
-import { FlipFlow } from '../flipflow';
-import { Point, PageRect, RectPoints } from '../BasicTypes';
-import { FlipDirection } from '../Flip/Flip';
-import { Page, PageOrientation } from '../Page/Page';
-import { FlipSetting, SizeType } from '../Settings';
-
-type FrameAction = () => void;
-type AnimationSuccessAction = () => void;
-
-/**
- * Type describing calculated values for drop shadows
- */
-type Shadow = {
-    /** Shadow Position Start Point */
-    pos: Point;
-    /** The angle of the shadows relative to the book */
-    angle: number;
-    /** Base width shadow */
-    width: number;
-    /** Base shadow opacity */
-    opacity: number;
-    /** Flipping Direction, the direction of the shadow gradients */
-    direction: FlipDirection;
-    /** Flipping progress in percent (0 - 100) */
-    progress: number;
-};
-
-/**
- * Type describing the animation process
- * Only one animation process can be started at a same time
- */
-type AnimationProcess = {
-    /** List of frames in playback order. Each frame is a function. */
-    frames: FrameAction[];
-    /** Total animation duration */
-    duration: number;
-    /** Animation duration of one frame */
-    durationFrame: number;
-    /** Сallback at the end of the animation */
-    onAnimateEnd: AnimationSuccessAction;
-    /** Animation start time (Global Timer) */
-    startedAt: number;
-};
-
-/**
- * Book orientation
- */
-export const enum Orientation {
-    PORTRAIT = 'portrait',
-    LANDSCAPE = 'landscape',
-}
-
 /**
  * Class responsible for rendering the book
  */
-export abstract class Render {
-    protected readonly setting: FlipSetting;
-    protected readonly app: FlipFlow;
-
-    /** Left static book page */
-    protected leftPage: Page = null;
-    /** Right static book page */
-    protected rightPage: Page = null;
-
-    /** Page currently flipping */
-    protected flippingPage: Page = null;
-    /** Next page at the time of flipping */
-    protected bottomPage: Page = null;
-
-    /** Current flipping direction */
-    protected direction: FlipDirection = null;
-    /** Current book orientation */
-    protected orientation: Orientation = null;
-    protected rtl: boolean = null;
-    /** Сurrent state of the shadows */
-    protected shadow: Shadow = null;
-    /** Сurrent animation process */
-    protected animation: AnimationProcess = null;
-    /** Page borders while flipping */
-    protected pageRect: RectPoints = null;
-    /** Current book area */
-    private boundsRect: PageRect = null;
-
-    /** Timer started from start of rendering */
-    protected timer = 0;
-
-    /**
-     * Safari browser definitions for resolving a bug with a css property clip-area
-     *
-     * https://bugs.webkit.org/show_bug.cgi?id=126207
-     */
-    private safari = false;
-
-    protected constructor(app: FlipFlow, setting: FlipSetting) {
+export class Render {
+    constructor(app, setting) {
+        /** Left static book page */
+        this.leftPage = null;
+        /** Right static book page */
+        this.rightPage = null;
+        /** Page currently flipping */
+        this.flippingPage = null;
+        /** Next page at the time of flipping */
+        this.bottomPage = null;
+        /** Current flipping direction */
+        this.direction = null;
+        /** Current book orientation */
+        this.orientation = null;
+        this.rtl = null;
+        /** Сurrent state of the shadows */
+        this.shadow = null;
+        /** Сurrent animation process */
+        this.animation = null;
+        /** Page borders while flipping */
+        this.pageRect = null;
+        /** Current book area */
+        this.boundsRect = null;
+        /** Timer started from start of rendering */
+        this.timer = 0;
+        /**
+         * Safari browser definitions for resolving a bug with a css property clip-area
+         *
+         * https://bugs.webkit.org/show_bug.cgi?id=126207
+         */
+        this.safari = false;
         this.setting = setting;
         this.app = app;
-
         // detect safari
         const regex = new RegExp('Version\\/[\\d\\.]+.*Safari/');
         this.safari = regex.exec(window.navigator.userAgent) !== null;
     }
-
-    /**
-     * Rendering action on each requestAnimationFrame call. The entire rendering process is performed only in this method
-     */
-    protected abstract drawFrame(): void;
-
-    /**
-     * Reload the render area, after update pages
-     */
-    public abstract reload(): void;
-
     /**
      * Executed when requestAnimationFrame is called. Performs the current animation process and call drawFrame()
      *
      * @param timer
      */
-    private render(timer: number): void {
+    render(timer) {
         if (this.animation !== null) {
             // Find current frame of animation
-            const frameIndex = Math.round(
-                (timer - this.animation.startedAt) / this.animation.durationFrame
-            );
-
+            const frameIndex = Math.round((timer - this.animation.startedAt) / this.animation.durationFrame);
             if (frameIndex < this.animation.frames.length) {
                 this.animation.frames[frameIndex]();
-            } else {
+            }
+            else {
                 this.animation.onAnimateEnd();
                 this.animation = null;
             }
         }
-
         this.timer = timer;
         this.drawFrame();
     }
-
     /**
      * Running requestAnimationFrame, and rendering process
      */
-    public start(): void {
+    start() {
         this.update();
-
-        const loop = (timer: number): void => {
+        const loop = (timer) => {
             this.render(timer);
             requestAnimationFrame(loop);
         };
-
         requestAnimationFrame(loop);
     }
-
     /**
      * Start a new animation process
      *
@@ -155,13 +76,8 @@ export abstract class Render {
      * @param {number} duration - total animation duration
      * @param {AnimationSuccessAction} onAnimateEnd - Animation callback function
      */
-    public startAnimation(
-        frames: FrameAction[],
-        duration: number,
-        onAnimateEnd: AnimationSuccessAction
-    ): void {
+    startAnimation(frames, duration, onAnimateEnd) {
         this.finishAnimation(); // finish the previous animation process
-
         this.animation = {
             frames,
             duration,
@@ -170,90 +86,75 @@ export abstract class Render {
             startedAt: this.timer,
         };
     }
-
     /**
      * End the current animation process and call the callback
      */
-    public finishAnimation(): void {
+    finishAnimation() {
         if (this.animation !== null) {
             this.animation.frames[this.animation.frames.length - 1]();
-
             if (this.animation.onAnimateEnd !== null) {
                 this.animation.onAnimateEnd();
             }
         }
-
         this.animation = null;
     }
-
     /**
      * Recalculate the size of the displayed area, and update the page orientation
      */
-    public update(): void {
+    update() {
         this.boundsRect = null;
         const orientation = this.calculateBoundsRect();
         const rtl = this.app.getSettings().rtl;
-
         if (this.orientation !== orientation) {
             this.orientation = orientation;
             this.app.updateOrientation(orientation);
         }
-
         if (this.rtl !== rtl) {
             this.rtl = rtl;
             this.app.updateRTL(rtl);
         }
     }
-
     /**
      * Calculate the size and position of the book depending on the parent element and configuration parameters
      */
-    private calculateBoundsRect(): Orientation {
-        let orientation = Orientation.LANDSCAPE;
-
+    calculateBoundsRect() {
+        let orientation = "landscape" /* Orientation.LANDSCAPE */;
         const blockWidth = this.getBlockWidth();
-        const middlePoint: Point = {
+        const middlePoint = {
             x: blockWidth / 2,
             y: this.getBlockHeight() / 2,
         };
-
         const ratio = this.setting.width / this.setting.height;
-
         let pageWidth = this.setting.width;
         let pageHeight = this.setting.height;
-
         let left = middlePoint.x - pageWidth;
-
-        if (this.setting.size === SizeType.STRETCH) {
+        if (this.setting.size === "stretch" /* SizeType.STRETCH */) {
             if (blockWidth < this.setting.minWidth * 2 && this.app.getSettings().usePortrait)
-                orientation = Orientation.PORTRAIT;
-
+                orientation = "portrait" /* Orientation.PORTRAIT */;
             pageWidth =
-                orientation === Orientation.PORTRAIT
+                orientation === "portrait" /* Orientation.PORTRAIT */
                     ? this.getBlockWidth()
                     : this.getBlockWidth() / 2;
-
-            if (pageWidth > this.setting.maxWidth) pageWidth = this.setting.maxWidth;
-
+            if (pageWidth > this.setting.maxWidth)
+                pageWidth = this.setting.maxWidth;
             pageHeight = pageWidth / ratio;
             if (pageHeight > this.getBlockHeight()) {
                 pageHeight = this.getBlockHeight();
                 pageWidth = pageHeight * ratio;
             }
-
             left =
-                orientation === Orientation.PORTRAIT
+                orientation === "portrait" /* Orientation.PORTRAIT */
                     ? middlePoint.x - pageWidth / 2 - pageWidth
                     : middlePoint.x - pageWidth;
-        } else {
+        }
+        else {
             if (blockWidth < pageWidth * 2) {
                 if (this.app.getSettings().usePortrait) {
-                    orientation = Orientation.PORTRAIT;
+                    orientation = "portrait" /* Orientation.PORTRAIT */;
                     left = middlePoint.x - pageWidth / 2 - pageWidth;
                 }
             }
         }
-
         this.boundsRect = {
             left,
             top: middlePoint.y - pageHeight / 2,
@@ -261,10 +162,8 @@ export abstract class Render {
             height: pageHeight,
             pageWidth: pageWidth,
         };
-
         return orientation;
     }
-
     /**
      * Set the current parameters of the drop shadow
      *
@@ -273,16 +172,10 @@ export abstract class Render {
      * @param {number} progress - Flipping progress in percent (0 - 100)
      * @param {FlipDirection} direction - Flipping Direction, the direction of the shadow gradients
      */
-    public setShadowData(
-        pos: Point,
-        angle: number,
-        progress: number,
-        direction: FlipDirection
-    ): void {
-        if (!this.app.getSettings().drawShadow) return;
-
+    setShadowData(pos, angle, progress, direction) {
+        if (!this.app.getSettings().drawShadow)
+            return;
         const maxShadowOpacity = 100 * this.getSettings().maxShadowOpacity;
-
         this.shadow = {
             pos,
             angle,
@@ -292,153 +185,129 @@ export abstract class Render {
             progress: progress * 2,
         };
     }
-
     /**
      * Clear shadow
      */
-    public clearShadow(): void {
+    clearShadow() {
         this.shadow = null;
     }
-
     /**
      * Get parent block offset width
      */
-    public getBlockWidth(): number {
+    getBlockWidth() {
         return this.app.getUI().getDistElement().offsetWidth;
     }
-
     /**
      * Get parent block offset height
      */
-    public getBlockHeight(): number {
+    getBlockHeight() {
         return this.app.getUI().getDistElement().offsetHeight;
     }
-
     /**
      * Get current flipping direction
      */
-    public getDirection(): FlipDirection {
+    getDirection() {
         return this.direction;
     }
-
     /**
      * Сurrent size and position of the book
      */
-    public getRect(): PageRect {
-        if (this.boundsRect === null) this.calculateBoundsRect();
-
+    getRect() {
+        if (this.boundsRect === null)
+            this.calculateBoundsRect();
         return this.boundsRect;
     }
-
     /**
      * Get configuration object
      */
-    public getSettings(): FlipSetting {
+    getSettings() {
         return this.app.getSettings();
     }
-
     /**
      * Get current book orientation
      */
-    public getOrientation(): Orientation {
+    getOrientation() {
         return this.orientation;
     }
-
     /**
      * Get current book direction
      */
-    public getRTL(): boolean {
+    getRTL() {
         return this.rtl;
     }
-    
     /**
      * Set page area while flipping
      *
      * @param direction
      */
-    public setPageRect(pageRect: RectPoints): void {
+    setPageRect(pageRect) {
         this.pageRect = pageRect;
     }
-
     /**
      * Set flipping direction
      *
      * @param direction
      */
-    public setDirection(direction: FlipDirection): void {
+    setDirection(direction) {
         this.direction = direction;
     }
-
     /**
      * Set right static book page
      *
      * @param page
      */
-    public setRightPage(page: Page): void {
-        if (page !== null) page.setOrientation(PageOrientation.RIGHT);
-
+    setRightPage(page) {
+        if (page !== null)
+            page.setOrientation(1 /* PageOrientation.RIGHT */);
         this.rightPage = page;
     }
-
     /**
      * Set left static book page
      * @param page
      */
-    public setLeftPage(page: Page): void {
-        if (page !== null) page.setOrientation(PageOrientation.LEFT);
-
+    setLeftPage(page) {
+        if (page !== null)
+            page.setOrientation(0 /* PageOrientation.LEFT */);
         this.leftPage = page;
     }
-
     /**
      * Set next page at the time of flipping
      * @param page
      */
-    public setBottomPage(page: Page): void {
+    setBottomPage(page) {
         if (page !== null)
-            page.setOrientation(
-                this.direction === FlipDirection.BACK ? PageOrientation.LEFT : PageOrientation.RIGHT
-            );
-
+            page.setOrientation(this.direction === 1 /* FlipDirection.BACK */ ? 0 /* PageOrientation.LEFT */ : 1 /* PageOrientation.RIGHT */);
         this.bottomPage = page;
     }
-
     /**
      * Set currently flipping page
      *
      * @param page
      */
-    public setFlippingPage(page: Page): void {
+    setFlippingPage(page) {
         if (page !== null)
-            page.setOrientation(
-                this.direction === FlipDirection.FORWARD &&
-                    this.orientation !== Orientation.PORTRAIT
-                    ? PageOrientation.LEFT
-                    : PageOrientation.RIGHT
-            );
-
+            page.setOrientation(this.direction === 0 /* FlipDirection.FORWARD */ &&
+                this.orientation !== "portrait" /* Orientation.PORTRAIT */
+                ? 0 /* PageOrientation.LEFT */
+                : 1 /* PageOrientation.RIGHT */);
         this.flippingPage = page;
     }
-
     /**
      * Coordinate conversion function. Window coordinates -> to book coordinates
      *
      * @param {Point} pos - Global coordinates relative to the window
      * @returns {Point} Coordinates relative to the book
      */
-    public convertToBook(pos: Point): Point {
+    convertToBook(pos) {
         const rect = this.getRect();
-
         return {
             x: pos.x - rect.left,
             y: pos.y - rect.top,
         };
     }
-
-    public isSafari(): boolean {
+    isSafari() {
         return this.safari;
     }
-
     /**
      * Coordinate conversion function. Window coordinates -> to current coordinates of the working page
      *
@@ -447,21 +316,18 @@ export abstract class Render {
      *
      * @returns {Point} Coordinates relative to the work page
      */
-    public convertToPage(pos: Point, direction?: FlipDirection): Point {
-        if (!direction) direction = this.direction;
-
+    convertToPage(pos, direction) {
+        if (!direction)
+            direction = this.direction;
         const rect = this.getRect();
-        const x =
-            direction === FlipDirection.FORWARD
-                ? pos.x - rect.left - rect.width / 2
-                : rect.width / 2 - pos.x + rect.left;
-
+        const x = direction === 0 /* FlipDirection.FORWARD */
+            ? pos.x - rect.left - rect.width / 2
+            : rect.width / 2 - pos.x + rect.left;
         return {
             x,
             y: pos.y - rect.top,
         };
     }
-
     /**
      * Coordinate conversion function. Coordinates relative to the work page -> Window coordinates
      *
@@ -470,24 +336,20 @@ export abstract class Render {
      *
      * @returns {Point} Global coordinates relative to the window
      */
-    public convertToGlobal(pos: Point, direction?: FlipDirection): Point {
-        if (!direction) direction = this.direction;
-
-        if (pos == null) return null;
-
+    convertToGlobal(pos, direction) {
+        if (!direction)
+            direction = this.direction;
+        if (pos == null)
+            return null;
         const rect = this.getRect();
-
-        const x =
-            direction === FlipDirection.FORWARD
-                ? pos.x + rect.left + rect.width / 2
-                : rect.width / 2 - pos.x + rect.left;
-
+        const x = direction === 0 /* FlipDirection.FORWARD */
+            ? pos.x + rect.left + rect.width / 2
+            : rect.width / 2 - pos.x + rect.left;
         return {
             x,
             y: pos.y + rect.top,
         };
     }
-
     /**
      * Casting the coordinates of the corners of the rectangle in the coordinates relative to the window
      *
@@ -496,9 +358,9 @@ export abstract class Render {
      *
      * @returns {RectPoints} Coordinates of the corners of the rectangle relative to the window
      */
-    public convertRectToGlobal(rect: RectPoints, direction?: FlipDirection): RectPoints {
-        if (!direction) direction = this.direction;
-
+    convertRectToGlobal(rect, direction) {
+        if (!direction)
+            direction = this.direction;
         return {
             topLeft: this.convertToGlobal(rect.topLeft, direction),
             topRight: this.convertToGlobal(rect.topRight, direction),

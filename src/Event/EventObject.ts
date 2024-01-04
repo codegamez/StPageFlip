@@ -1,4 +1,4 @@
-import { PageFlip } from '../PageFlip';
+import { FlipFlow } from '../flipflow';
 
 /**
  * Data type passed to the event handler
@@ -10,7 +10,7 @@ export type DataType = number | string | boolean | object;
  */
 export interface WidgetEvent {
     data: DataType;
-    object: PageFlip;
+    object: FlipFlow;
 }
 
 type EventCallback = (e: WidgetEvent) => void;
@@ -46,7 +46,7 @@ export abstract class EventObject {
         this.events.delete(event);
     }
 
-    protected trigger(eventName: string, app: PageFlip, data: DataType = null): void {
+    protected trigger(eventName: string, app: FlipFlow, data: DataType = null): void {
         if (!this.events.has(eventName)) return;
 
         for (const callback of this.events.get(eventName)) {

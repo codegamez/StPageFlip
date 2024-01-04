@@ -1,7 +1,7 @@
 import { HTMLPage } from '../Page/HTMLPage';
 import { Render } from '../Render/Render';
 import { PageCollection } from './PageCollection';
-import { PageFlip } from '../PageFlip';
+import { FlipFlow } from '../flipflow';
 import { PageDensity } from '../Page/Page';
 
 /**
@@ -12,10 +12,10 @@ export class HTMLPageCollection extends PageCollection {
     private readonly pagesElement: NodeListOf<HTMLElement> | HTMLElement[];
 
     constructor(
-        app: PageFlip,
+        app: FlipFlow,
         render: Render,
         element: HTMLElement,
-        items: NodeListOf<HTMLElement> | HTMLElement[]
+        items: NodeListOf<HTMLElement> | HTMLElement[],
     ) {
         super(app, render);
 
@@ -28,7 +28,7 @@ export class HTMLPageCollection extends PageCollection {
             const page = new HTMLPage(
                 this.render,
                 pageElement,
-                pageElement.dataset['density'] === 'hard' ? PageDensity.HARD : PageDensity.SOFT
+                pageElement.dataset['density'] === 'hard' ? PageDensity.HARD : PageDensity.SOFT,
             );
 
             page.load();
