@@ -44,5 +44,9 @@
         "frontend",
         "javascript"
     ],
+    "files": [
+        "dist",
+        "src"
+    ],
     "types": "./dist/flipflow.d.ts"
 }
