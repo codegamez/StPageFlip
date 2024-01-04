@@ -8,7 +8,7 @@ export default [
         output: [{ file: 'dist/js/flipflow.browser.js', format: 'umd', name: 'St' }],
         plugins: [
             postcss(),
-            typescript({ tsconfig: 'tsconfig.json' }),
+            typescript({ tsconfig: 'tsconfig.json', useTsconfigDeclarationDir: true }),
             terser(),
         ],
     },
@@ -17,7 +17,7 @@ export default [
         output: [{ file: 'dist/js/flipflow.module.js', format: 'es' }],
         plugins: [
             postcss(),
-            typescript({ tsconfig: 'tsconfig.json' }),
+            typescript({ tsconfig: 'tsconfig.json', useTsconfigDeclarationDir: true }),
             terser(),
         ],
     },

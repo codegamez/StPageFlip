@@ -44,5 +44,5 @@
         "frontend",
         "javascript"
     ],
-    "types": "dist/flipflow.d.ts"
+    "types": "./dist/flipflow.d.ts"
 }
