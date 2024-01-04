@@ -1,8 +1,8 @@
 {
     "name": "flipflow",
     "version": "2.0.10-3",
-    "main": "dist/js/page-flip.browser.js",
-    "browser": "dist/js/page-flip.browser.js",
+    "main": "dist/js/flipflow.browser.js",
+    "browser": "dist/js/flipflow.browser.js",
     "author": "oleg.litovski9@gmail.com",
     "license": "MIT",
     "description": "Powerful, simple and flexible JS Library for creating realistic and beautiful page turning effect",
