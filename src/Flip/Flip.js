@@ -171,8 +171,8 @@ export class Flip {
      */
     flipPrev(corner) {
         this.flip({
-            x: 10,
-            y: corner === "top" /* FlipCorner.TOP */ ? 1 : this.render.getRect().height - 2,
+            x: this.render.getRect().left + 10,
+            y: corner === 'top' /* FlipCorner.TOP */ ? 1 : this.render.getRect().height - 2,
         });
     }
     /**
