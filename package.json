@@ -1,6 +1,6 @@
 {
     "name": "flipflow",
-    "version": "2.0.10-4",
+    "version": "2.0.10",
     "main": "dist/js/flipflow.browser.js",
     "browser": "dist/js/flipflow.browser.js",
     "author": "oleg.litovski9@gmail.com",
